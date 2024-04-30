@@ -16,7 +16,7 @@ Modify the `.env` file replacing
 
 At the first usage, build the docker image using the following command in the project folder:
 ```sh
-docker compose build
+./setup_docker.bash
 ```
 
 ## Usage
@@ -31,6 +31,12 @@ docker compose exec -it gazebo_franka_ros1-ros1_node-1 bash
 > this is the equivalent of opening a terminal on your Ubuntu installation but on the Ubuntu installation running in the container. 
 
 where `gazebo_franka_ros1-ros1_node-1` is the name of the container you want to access. To see the names of all the container running on your machine, you can use `docker ps`.
+
+### First Usage
+Access a running container and use the following command to initialize your catkin_ws:
+```sh 
+catkin_make
+```
 
 ## Start Gazebo simulation with Franka Robot arm
 Start simulation with robot arm:

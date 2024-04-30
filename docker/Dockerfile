@@ -5,7 +5,6 @@ FROM osrf/ros:${ROS_DISTRO}-desktop-full-focal
 ENV ROS_DISTRO=${ROS_DISTRO}
 SHELL ["/bin/bash", "-c"]
 
-# ARG USERNAME=tueirsi-mia-n42
 ARG USERNAME=${USERNAME}
 ARG ROS_WS=${ROS_WS}
 # ARG ROS_WS=/home/${USERNAME}
@@ -27,19 +26,15 @@ WORKDIR ${ROS_WS}/src
 
 # Build the base Colcon workspace, installing dependencies first.
 WORKDIR ${ROS_WS}
-RUN source /opt/ros/${ROS_DISTRO}/setup.bash \
- && apt-get update -y \
+RUN apt-get update -y \
  && apt-get install -y --no-install-recommends \
-  python3-pip \
-# && catkin_make\
-# && chown -R 1000:1000 ${ROS_WS}/
+  python3-pip 
 #  && MAKEFLAGS=-2 colcon build --parallel-workers=2 --event-handlers desktop_notification- status- --cmake-args -DCMAKE_BUILD_TYPE=Release
 
 RUN apt-get update && apt-get install -y --no-install-recommends nano
 
 
 # Dev container arguments
-# ARG USERNAME=tueirsi-mia-n42
 ARG UID=${UID:-1000}
 ARG GID=${UID:-1000}
 
@@ -49,10 +44,11 @@ RUN groupadd --gid $GID $USERNAME \
  && echo ${USERNAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME} \
  && chmod 0440 /etc/sudoers.d/${USERNAME} \
  && mkdir -p /home/${USERNAME} \
- && chown -R ${UID}:${GID} /home/${USERNAME}
-
+ && chown -R $USERNAME:$USERNAME /home/${USERNAME} 
 # Set the ownership of the overlay workspace to the new user
-#RUN chown -R ${UID}:${GID} ${ROS_WS}/
+
+RUN source /opt/ros/${ROS_DISTRO}/setup.bash \
+ && catkin_make
 
 COPY ./docker/entrypoint.sh /home/${USERNAME}/
 # ENV my_user=$USERNAME
