@@ -2,7 +2,8 @@
 
 ## Cloning
 ```sh
-git clone --recurse-submodules git@gitlab.lrz.de:tum-impl-ss24/gazebo_franka_ros1.git
+git clone git@gitlab.lrz.de:tum-impl-ss24/gazebo_franka_ros1.git
+git checkout master
 ```
 
 
