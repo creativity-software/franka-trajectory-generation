@@ -31,8 +31,8 @@ RUN source /opt/ros/${ROS_DISTRO}/setup.bash \
  && apt-get update -y \
  && apt-get install -y --no-install-recommends \
   python3-pip \
- && catkin_make\
- && chown -R 1000:1000 ${ROS_WS}/
+# && catkin_make\
+# && chown -R 1000:1000 ${ROS_WS}/
 #  && MAKEFLAGS=-2 colcon build --parallel-workers=2 --event-handlers desktop_notification- status- --cmake-args -DCMAKE_BUILD_TYPE=Release
 
 RUN apt-get update && apt-get install -y --no-install-recommends nano
@@ -52,7 +52,7 @@ RUN groupadd --gid $GID $USERNAME \
  && chown -R ${UID}:${GID} /home/${USERNAME}
 
 # Set the ownership of the overlay workspace to the new user
-RUN chown -R ${UID}:${GID} ${ROS_WS}/
+#RUN chown -R ${UID}:${GID} ${ROS_WS}/
 
 COPY ./docker/entrypoint.sh /home/${USERNAME}/
 # ENV my_user=$USERNAME
