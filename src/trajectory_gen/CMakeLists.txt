@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(trajectory_gen)
 
+## target_sources(Point PUBLIC "$<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/trajectory_gen/include/src/point.cpp>")
+
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 
@@ -125,6 +127,10 @@ include_directories(
 #   src/${PROJECT_NAME}/trajectory_gen.cpp
 # )
 
+# add_library(${PROJECT_NAME}
+#  src/point.cpp 
+# )
+
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
@@ -135,6 +141,8 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 #add_executable(${PROJECT_NAME}_node src/trajectory_gen_node.cpp src/velocity_profile.cpp src/trajectory_generator.cpp)
 add_executable(${PROJECT_NAME}_node src/trajectory_gen_node.cpp)
+
+# add_executable(${PROJECT_NAME}_node src/point.cpp)
 
 
 ## Rename C++ executable without prefix

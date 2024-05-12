@@ -1,7 +1,9 @@
 #include "ros/ros.h"
 #include "geometry_msgs/PoseStamped.h"
-#include "trajectory_gen/trajectory_generator.hpp"
+// #include "trajectory_gen/trajectory_generator.hpp"
 #include "trajectory_gen/velocity_profile.hpp"
+#include <iostream>
+#include <geometry_msgs/Point.h>
 
 int main(int argc, char **argv)
 {
@@ -40,8 +42,8 @@ int main(int argc, char **argv)
      * than we can send them, the number here specifies how many messages to
      * buffer up before throwing some away.
      */
-    ros::Publisher trajectory_pub = n.advertise<geometry_msgs::PoseStamped>("/panda/cartesian_impedance_example_controller/equilibrium_pose", 1000);
-    double rate = 1000;
+    ros::Publisher trajectory_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian_impedance_example_controller/equilibrium_pose", 1000);
+    double rate = 100;
     ros::Rate loop_rate(rate);
     /**
      * This is a message object. You stuff it with data, and then publish it.
@@ -49,17 +51,38 @@ int main(int argc, char **argv)
     geometry_msgs::PoseStamped msg;
     int seq = 0;
 
+    geometry_msgs::Point p;
+    std::cout << "Point p.x is " << p.x << "\n";
+
+    // double p_start, double p_end, double q_dot_max, double q_double_dot
+    velocity_profile::Profile profile(0, 10, 20, 10);
 
     ROS_INFO("Starting trajectory generation");
     double time = 0.0;
+    // bool hitsGround = msg.pose.position.z == 0;
+    msg.pose.position.y = 5;
+    msg.pose.position.x = 5;
+    msg.pose.position.z = 5;
+    trajectory_pub.publish(msg);
+
+    
     while (ros::ok())
     {
+        profile.update();
+        std::cout << "Update position velocity: " << profile.getQDot() << ", update time: " << profile.getTime()  << ", current position" << profile.getQ() << "\n"; 
         time = time + 1 / rate;
         seq += 1;
-        // msg.pose.position.x = ;
-        // msg.pose.position.y = ;
-        // msg.pose.position.z = ; 
+        // msg.pose.position.x -= 0.1;
+        if (profile.isEnded()) {
+            break;
+        } 
+    
+        // ROS_INFO("Starting trajectory generation" + seq);
+        // std::cout << "Hello b. " <<  msg.pose.position.x << "\n";
         msg.header.seq = seq;
+        msg.header.frame_id = "panda_link7";
+
+        // std::cout << msg.pose.position.x << std::endl;
 
         /**
          * The publish() function is how you send messages. The parameter
@@ -69,7 +92,7 @@ int main(int argc, char **argv)
          */
         trajectory_pub.publish(msg);
 
-        ros::spinOnce();
+        // ros::spinOnce();
         loop_rate.sleep();
     }
 

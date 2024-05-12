@@ -5,7 +5,7 @@
 
 namespace trajectory_generator
 {
-
+    
 }
 
 #endif  // TRAJECTORY_GENERATOR_HPP_INCLUDED
