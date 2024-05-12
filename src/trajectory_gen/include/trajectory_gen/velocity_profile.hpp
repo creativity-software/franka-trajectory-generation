@@ -8,7 +8,6 @@
 
 namespace velocity_profile
 {
-    const double DT_TIME = 0.01;
     class Profile {
     private:
         // contstant acceleration 
@@ -74,8 +73,8 @@ namespace velocity_profile
             }
         }
 
-        void updateTime() {
-            time += DT_TIME;
+        void updateTime(double dt) {
+            time += dt;
         }
 
         void updateVelocity() {
@@ -88,13 +87,13 @@ namespace velocity_profile
             // q_dot += q_double_dot_current() * DT_TIME;
         }
 
-        void update() {
+        void update(double dt) {
             // update time frame
-            if (time + DT_TIME >= tf) {
+            if (time + dt >= tf) {
                 hasEnded = true;
                 return;
             }
-            updateTime();
+            updateTime(dt);
             updatePosition();  
             updateVelocity();      
         }

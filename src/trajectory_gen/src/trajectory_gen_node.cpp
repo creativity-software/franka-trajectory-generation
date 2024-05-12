@@ -1,6 +1,6 @@
 #include "ros/ros.h"
 #include "geometry_msgs/PoseStamped.h"
-// #include "trajectory_gen/trajectory_generator.hpp"
+#include "trajectory_gen/trajectory_generator.hpp"
 #include "trajectory_gen/velocity_profile.hpp"
 #include <iostream>
 #include <geometry_msgs/Point.h>
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
      * buffer up before throwing some away.
      */
     ros::Publisher trajectory_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian_impedance_example_controller/equilibrium_pose", 1000);
-    double rate = 100;
+    double rate = 1000;
     ros::Rate loop_rate(rate);
     /**
      * This is a message object. You stuff it with data, and then publish it.
@@ -54,26 +54,41 @@ int main(int argc, char **argv)
     geometry_msgs::Point p;
     std::cout << "Point p.x is " << p.x << "\n";
 
-    // double p_start, double p_end, double q_dot_max, double q_double_dot
-    velocity_profile::Profile profile(0, 10, 20, 10);
 
     ROS_INFO("Starting trajectory generation");
     double time = 0.0;
     // bool hitsGround = msg.pose.position.z == 0;
-    msg.pose.position.y = 5;
-    msg.pose.position.x = 5;
-    msg.pose.position.z = 5;
+    msg.pose.position.y = 0;
+    msg.pose.position.x = 0;
+    msg.pose.position.z = 0;
+    msg.header.frame_id = "panda_link7";
     trajectory_pub.publish(msg);
+
+    // double p_start, double p_end, double q_dot_max, double q_double_dot
+    velocity_profile::Profile profile(0, 10, 4, 10);
+    trajectory_generator::triple start(msg.pose.position.x, msg.pose.position.y, msg.pose.position.z);
+    trajectory_generator::triple end(msg.pose.position.x, msg.pose.position.y, msg.pose.position.z + 2);
+    trajectory_generator::LinearTrajectory trajectory(start, end);
 
     
     while (ros::ok())
     {
-        profile.update();
-        std::cout << "Update position velocity: " << profile.getQDot() << ", update time: " << profile.getTime()  << ", current position" << profile.getQ() << "\n"; 
+        double dt = 1.0d / rate;
+        profile.update(dt);
+        trajectory.update(dt);
+        geometry_msgs::Point current_point = trajectory.getPoint();
+        // std::cout << "Update linear trajectory, position x: " << current_point.x 
+        // << ", y: " << current_point.y << ", z: " << current_point.z << "\n"; 
+        // std::cout << "Update position velocity: " << profile.getQDot() << ", update time: " << profile.getTime()  << ", current position" << profile.getQ() << "\n"; 
+        
+        msg.pose.position.y = current_point.y;
+        msg.pose.position.x = current_point.x;
+        msg.pose.position.z = current_point.z;
+
         time = time + 1 / rate;
         seq += 1;
         // msg.pose.position.x -= 0.1;
-        if (profile.isEnded()) {
+        if (trajectory.isEnded()) {
             break;
         } 
     
@@ -91,6 +106,9 @@ int main(int argc, char **argv)
          * in the constructor above.
          */
         trajectory_pub.publish(msg);
+
+        // sleep for 0.5 seconds before new calculation
+        ros::Duration(0.05).sleep();
 
         // ros::spinOnce();
         loop_rate.sleep();
