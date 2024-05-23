@@ -61,24 +61,24 @@ int main(int argc, char **argv)
     msg.pose.position.y = 0;
     msg.pose.position.x = 0;
     msg.pose.position.z = 0;
-    msg.header.frame_id = "panda_link7";
+    msg.header.frame_id = "panda_link6";
     trajectory_pub.publish(msg);
-
+    
     // double p_start, double p_end, double q_dot_max, double q_double_dot
-    velocity_profile::Profile profile(0, 10, 4, 10);
+    // velocity_profile::Profile profile(0, 10, 4, 10);
     trajectory_generator::triple start(msg.pose.position.x, msg.pose.position.y, msg.pose.position.z);
-    trajectory_generator::triple end(msg.pose.position.x, msg.pose.position.y, msg.pose.position.z + 2);
-    trajectory_generator::LinearTrajectory trajectory(start, end);
-
+    trajectory_generator::triple end(msg.pose.position.x, msg.pose.position.y, msg.pose.position.z);
+    // trajectory_generator::LinearTrajectory trajectory ( std::make_tuple(0.1 , 0, 1), std::make_tuple(0 , 0,1) , start, end, 2, 10);
+    trajectory_generator::CircleTrajectory2d trajectory(std::make_tuple(0.1 , 0, 1), std::make_tuple(0 , 0,1), 2, 2, 10);
     
     while (ros::ok())
     {
         double dt = 1.0d / rate;
-        profile.update(dt);
+        // profile.update(dt);
         trajectory.update(dt);
         geometry_msgs::Point current_point = trajectory.getPoint();
-        // std::cout << "Update linear trajectory, position x: " << current_point.x 
-        // << ", y: " << current_point.y << ", z: " << current_point.z << "\n"; 
+        std::cout << "Update linear trajectory, position x: " << current_point.x 
+        << ", y: " << current_point.y << ", z: " << current_point.z << "\n"; 
         // std::cout << "Update position velocity: " << profile.getQDot() << ", update time: " << profile.getTime()  << ", current position" << profile.getQ() << "\n"; 
         
         msg.pose.position.y = current_point.y;
@@ -95,7 +95,7 @@ int main(int argc, char **argv)
         // ROS_INFO("Starting trajectory generation" + seq);
         // std::cout << "Hello b. " <<  msg.pose.position.x << "\n";
         msg.header.seq = seq;
-        msg.header.frame_id = "panda_link7";
+        msg.header.frame_id = "panda_link6";
 
         // std::cout << msg.pose.position.x << std::endl;
 
