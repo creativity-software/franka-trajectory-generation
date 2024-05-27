@@ -43,7 +43,7 @@ int main(int argc, char **argv)
      * buffer up before throwing some away.
      */
     ros::Publisher trajectory_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian_impedance_example_controller/equilibrium_pose", 1000);
-    double rate = 1000;
+    double rate = 100;
     ros::Rate loop_rate(rate);
     /**
      * This is a message object. You stuff it with data, and then publish it.
@@ -58,18 +58,27 @@ int main(int argc, char **argv)
     ROS_INFO("Starting trajectory generation");
     double time = 0.0;
     // bool hitsGround = msg.pose.position.z == 0;
-    msg.pose.position.y = 0;
-    msg.pose.position.x = 0;
-    msg.pose.position.z = 0;
+    msg.pose.position.y = 0.00017410717033715934;
+    msg.pose.position.x = 0.3069175189557315;
+    msg.pose.position.z = 0.5902629417877038;
     msg.header.frame_id = "panda_link6";
     trajectory_pub.publish(msg);
-    
     // double p_start, double p_end, double q_dot_max, double q_double_dot
     // velocity_profile::Profile profile(0, 10, 4, 10);
-    trajectory_generator::triple start(msg.pose.position.x, msg.pose.position.y, msg.pose.position.z);
-    trajectory_generator::triple end(msg.pose.position.x, msg.pose.position.y, msg.pose.position.z);
-    // trajectory_generator::LinearTrajectory trajectory ( std::make_tuple(0.1 , 0, 1), std::make_tuple(0 , 0,1) , start, end, 2, 10);
-    trajectory_generator::CircleTrajectory2d trajectory(std::make_tuple(0.1 , 0, 1), std::make_tuple(0 , 0,1), 2, 2, 10);
+    trajectory_generator::triple start(0, 0, 0);
+    trajectory_generator::triple end(0, 0,-0.5);
+    // trajectory_generator::LinearTrajectory trajectory (
+    //      std::make_tuple(
+    //      msg.pose.position.x,
+    //      msg.pose.position.y,
+    //      msg.pose.position.z), 
+    //      std::make_tuple(0 , 0,1) , start, end, 2, 10);
+    trajectory_generator::CircleTrajectory2d trajectory(
+    std::make_tuple(
+    msg.pose.position.x,
+    msg.pose.position.y,
+    msg.pose.position.z)
+        , std::make_tuple(0 , 0,1), 0.1, 2, 10);
     
     while (ros::ok())
     {
