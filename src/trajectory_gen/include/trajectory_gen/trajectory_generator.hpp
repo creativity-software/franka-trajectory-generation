@@ -232,7 +232,7 @@ namespace trajectory_generator
         velocity_profile::Profile *profile;
 
         // hasEnded bool
-        bool has_ended;
+        bool has_ended = false;
     public: 
         CircleTrajectory2d(triple c, triple normal_vector_hat, double radius, double q_dot_max, double q_double_dot): 
         c(c), radius(radius), w(w), normal_vector_hat(normal_vector_hat) {
@@ -270,7 +270,8 @@ namespace trajectory_generator
 
 
         void update(double dt) override {
-            if (profile->getQ() >= 2 * PI * radius) {
+            std::cout << "Profile,  path: " << profile->getQ() << "radius: "<< 2 * PI * radius << "\n";
+            if (precision(profile->getQ(), 3) >= precision(2 * PI * radius, 3)) {
                 has_ended = true;
                 return;
             }
