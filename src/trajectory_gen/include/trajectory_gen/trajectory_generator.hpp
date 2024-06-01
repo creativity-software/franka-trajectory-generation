@@ -83,8 +83,21 @@ namespace trajectory_generator
             triple_mul(std::get<2>(rotational_matrix),std::get<2>(p_start)) )
             );
        }
+    
+    double precision( double f, int places )
+    {
+        double n = std::pow(10.0d, places ) ;
+        return std::round(f * n) / n ;
+    }
+    class Trajectory {
+    public:
+        virtual ~Trajectory() {}
+        virtual void update(double dt) = 0;
+        virtual bool isEnded() = 0;
+        virtual geometry_msgs::Point getPoint() = 0;
+    };
 
-    class LinearTrajectory {
+    class LinearTrajectory: public Trajectory {
     private:
         // start position
         triple p_start;
@@ -160,10 +173,11 @@ namespace trajectory_generator
             return triple_norm(diff);
         }
 
-        void update(double dt) {
+        void update(double dt) override {
             std::cout << "Current [diff]::" << profile->getQ() << "\n";
             std::cout << "Current [init_diff]::" << initial_diff << "\n";
-            if (profile->getQ() >= initial_diff) {
+            if (precision(profile->getQ(), 3) >= precision(initial_diff, 3)) {
+                std::cout << "Diff reset" << std::endl;
                 has_ended = true;
                 return;
             }
@@ -172,11 +186,11 @@ namespace trajectory_generator
             updatePosition();
         }
 
-        bool isEnded() {
+        bool isEnded() override {
             return has_ended;
         }
 
-        geometry_msgs::Point getPoint() {
+        geometry_msgs::Point getPoint() override {
             geometry_msgs::Point point;
             point.x = std::get<0>(current_position);
             point.y = std::get<1>(current_position);
@@ -188,7 +202,7 @@ namespace trajectory_generator
 
     const double PI = 3.141592653589793238463;
 
-    class CircleTrajectory2d {
+    class CircleTrajectory2d: public Trajectory {
     private:
         // start of the circle as \theta = 0
         triple p_start;
@@ -255,7 +269,7 @@ namespace trajectory_generator
         }
 
 
-        void update(double dt) {
+        void update(double dt) override {
             if (profile->getQ() >= 2 * PI * radius) {
                 has_ended = true;
                 return;
@@ -265,12 +279,12 @@ namespace trajectory_generator
             updatePosition();
         }
 
-          bool isEnded() {
+          bool isEnded() override {
             return has_ended;
         }
 
 
-        geometry_msgs::Point getPoint() {
+        geometry_msgs::Point getPoint() override {
             geometry_msgs::Point point;
             point.x = std::get<0>(current_position);
             point.y = std::get<1>(current_position);

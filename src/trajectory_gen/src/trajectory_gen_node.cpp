@@ -4,6 +4,24 @@
 #include "trajectory_gen/velocity_profile.hpp"
 #include <iostream>
 #include <geometry_msgs/Point.h>
+#include <franka_msgs/FrankaState.h>
+#include <memory>
+
+
+void stateCallback(const franka_msgs::FrankaState::ConstPtr& msg)
+{
+    // msg->O_F_ext_hat_K;//force at the e.e. take the first three components and do euclidean norm 
+    // msg->O_T_EE; //transformation matrix from base to end effector. take position matrix
+
+    //position end effector. for initialization
+    //external force on the end effector. use to check when in contact with table
+    std::cout << "In state callback" << std::endl;
+//   ROS_INFO("I heard",
+// //    msg->c_str()
+//   );
+
+}
+
 
 int main(int argc, char **argv)
 {
@@ -43,7 +61,7 @@ int main(int argc, char **argv)
      * buffer up before throwing some away.
      */
     ros::Publisher trajectory_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian_impedance_example_controller/equilibrium_pose", 1000);
-    double rate = 100;
+    double rate = 250;
     ros::Rate loop_rate(rate);
     /**
      * This is a message object. You stuff it with data, and then publish it.
@@ -58,48 +76,64 @@ int main(int argc, char **argv)
     ROS_INFO("Starting trajectory generation");
     double time = 0.0;
     // bool hitsGround = msg.pose.position.z == 0;
-    msg.pose.position.y = 0.00017410717033715934;
-    msg.pose.position.x = 0.3069175189557315;
-    msg.pose.position.z = 0.5902629417877038;
+    msg.pose.position.y = -0.01468797204056722;
+    msg.pose.position.x = 0.4177027570738568;
+    msg.pose.position.z = 0.42149735777916353;
     msg.header.frame_id = "panda_link6";
+
+    ros::Subscriber sub = n.subscribe("/franka_state_controller/franka_states", 5, stateCallback);
+
+
     trajectory_pub.publish(msg);
     // double p_start, double p_end, double q_dot_max, double q_double_dot
     // velocity_profile::Profile profile(0, 10, 4, 10);
     trajectory_generator::triple start(0, 0, 0);
-    trajectory_generator::triple end(0, 0,-0.5);
-    // trajectory_generator::LinearTrajectory trajectory (
-    //      std::make_tuple(
-    //      msg.pose.position.x,
-    //      msg.pose.position.y,
-    //      msg.pose.position.z), 
-    //      std::make_tuple(0 , 0,1) , start, end, 2, 10);
-    trajectory_generator::CircleTrajectory2d trajectory(
+    trajectory_generator::triple end(0, 0, 0.08398204667844711 - 0.42149735777916353);
+    trajectory_generator::LinearTrajectory linearTrajectory (
+         std::make_tuple(
+         msg.pose.position.x,
+         msg.pose.position.y,
+         msg.pose.position.z), 
+         std::make_tuple(0 , 0,1) , start, end, 2, 10);
+    trajectory_generator::CircleTrajectory2d circularTrajectory(
     std::make_tuple(
     msg.pose.position.x,
     msg.pose.position.y,
-    msg.pose.position.z)
+    msg.pose.position.z + 0.08398204667844711 - 0.42149735777916353)
         , std::make_tuple(0 , 0,1), 0.1, 2, 10);
     
+
+    std::unique_ptr<trajectory_generator::Trajectory> trajectory = std::make_unique<trajectory_generator::LinearTrajectory>(linearTrajectory);
+    bool isFinalTrajectory = false;
     while (ros::ok())
     {
         double dt = 1.0d / rate;
-        // profile.update(dt);
-        trajectory.update(dt);
-        geometry_msgs::Point current_point = trajectory.getPoint();
-        std::cout << "Update linear trajectory, position x: " << current_point.x 
+        trajectory->update(dt);
+        geometry_msgs::Point current_point = trajectory->getPoint();
+        std::cout << "Update trajectory, " << (isFinalTrajectory ? "circular" : "linear")  << "- position x: " << current_point.x 
         << ", y: " << current_point.y << ", z: " << current_point.z << "\n"; 
         // std::cout << "Update position velocity: " << profile.getQDot() << ", update time: " << profile.getTime()  << ", current position" << profile.getQ() << "\n"; 
         
         msg.pose.position.y = current_point.y;
         msg.pose.position.x = current_point.x;
         msg.pose.position.z = current_point.z;
+        msg.pose.orientation.w = 0;
+        msg.pose.orientation.x = 1;
+        msg.pose.orientation.y = 0;
+        msg.pose.orientation.z = 0;
 
         time = time + 1 / rate;
         seq += 1;
         // msg.pose.position.x -= 0.1;
-        if (trajectory.isEnded()) {
+        if (trajectory->isEnded() && !isFinalTrajectory) {
+            isFinalTrajectory = true;
+            trajectory =  std::make_unique<trajectory_generator::CircleTrajectory2d>(circularTrajectory);
+            std::cout << "Change to rotation" << std::endl;
+            continue;
+        } else if (trajectory->isEnded() && isFinalTrajectory) {
+            std::cout << "Change to rotation" << std::endl;
             break;
-        } 
+        }
     
         // ROS_INFO("Starting trajectory generation" + seq);
         // std::cout << "Hello b. " <<  msg.pose.position.x << "\n";
