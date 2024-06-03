@@ -48,35 +48,15 @@ services:
       - ./.ros1/build/:${ROS_WS}/build/:rw
       - ./.ros1/devel/:${ROS_WS}/devel/:rw
         # [Optional] Required for ptrace-based debuggers like C++, Go, and Rust
-    cap_add:
-      - SYS_PTRACE
     security_opt:
       - seccomp:unconfined
-    # user: tueirsi-mia-n42
-    # command: sleep infinity
+    # if running on real robots (real-time kernel)   
+    ulimits:
+      rtprio: 99
+      rttime: -1
+      memlock: 8428281856
+    cap_add:
+      - SYS_NICE
 
 
  
-  # # Developer container
-  # dev:
-  #   extends: overlay
-  #   image: turtlebot3_behavior:dev
-  #   build:
-  #     context: .
-  #     dockerfile: docker/Dockerfile
-  #     target: dev
-  #     args:
-  #       - UID=${UID:-1000}
-  #       - GID=${UID:-1000}
-  #       - USERNAME=${USERNAME:-devuser}
-  #   volumes:
-  #     # Mount the source code
-  #     - ./tb3_autonomy:/overlay_ws/src/tb3_autonomy:rw
-  #     - ./tb3_worlds:/overlay_ws/src/tb3_worlds:rw
-  #     # Mount colcon build artifacts for faster rebuilds
-  #     - ./.colcon/build/:/overlay_ws/build/:rw
-  #     - ./.colcon/install/:/overlay_ws/install/:rw
-  #     - ./.colcon/log/:/overlay_ws/log/:rw
-  #   user: ${USERNAME:-devuser}
-
-

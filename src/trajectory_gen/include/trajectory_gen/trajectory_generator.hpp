@@ -2,12 +2,14 @@
 
 #ifndef TRAJECTORY_GENERATOR_HPP_INCLUDED
 #define TRAJECTORY_GENERATOR_HPP_INCLUDED
+
 #include <tuple>
 #include <math.h>
 #include <geometry_msgs/Point.h>
 #include <string>
 #include "velocity_profile.hpp"
 #include <string>
+#include <float.h>
 
 namespace trajectory_generator
 {
@@ -83,7 +85,7 @@ namespace trajectory_generator
     void print_triple(triple tr, std::string str = "") {
         std::cout << str << "Triple: x =" << std::get<0>(tr)
          << ", y = " << std::get<1>(tr) 
-         << ", normal_vector_hat = " << std::get<2>(tr) << "\n";
+         << ", z = " << std::get<2>(tr) << "\n";
     }
     
     double precision( double f, int places)
@@ -136,7 +138,7 @@ namespace trajectory_generator
         
         bool has_ended = false;
     public:
-        LinearTrajectory(triple c, triple normal_vector_hat , triple p_start, triple p_end, double q_dot_max, double q_double_dot, double q_dot = 0, double force_threshold = 0.0d): 
+        LinearTrajectory(triple c, triple normal_vector_hat , triple p_start, triple p_end, double q_dot_max, double q_double_dot, double q_dot = 0, double force_threshold = 0): 
             c(c), normal_vector_hat(normal_vector_hat) , q_dot(q_dot), current_position(p_start), force_threshold(force_threshold) {
             y_hat = triple_cross_product(normal_vector_hat , c) / triple_norm(triple_cross_product(normal_vector_hat, c));
             x_hat = triple_cross_product(y_hat, normal_vector_hat);
@@ -172,6 +174,7 @@ namespace trajectory_generator
                 return;
             }
 
+            std::cout << "Getq" << profile->getQ() << ", initial diff" << initial_diff << "\n";
             if (precision(profile->getQ(), 3) >= precision(initial_diff, 3)) {
                 // std::cout << "Diff reset" << std::endl;
                 has_ended = true;

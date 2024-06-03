@@ -1,10 +1,17 @@
 #include "ros/ros.h"
 #include "geometry_msgs/PoseStamped.h"
+#include <geometry_msgs/Point.h>
 #include "trajectory_gen/trajectory_generator.hpp"
 #include "trajectory_gen/velocity_profile.hpp"
+#include "franka_msgs/FrankaState.h"
+
+#include <actionlib/client/simple_action_client.h>
+#include <actionlib/client/terminal_state.h>
+
+#include "franka_gripper/GraspAction.h"
+#include "franka_msgs/SetLoad.h"
+
 #include <iostream>
-#include <geometry_msgs/Point.h>
-#include <franka_msgs/FrankaState.h>
 #include <memory>
 #include <stack>
 
@@ -17,6 +24,7 @@ double previousZForce = 0.0d;
 
 void getInitialPositionCallback(const franka_msgs::FrankaState::ConstPtr& msg)
 {
+    // std::cout <<  "x: " << msg->O_T_EE[12] << ", y" << msg->O_T_EE[13] << ", z" << msg->O_T_EE[14] << "\n";
     initialPosition.x = msg->O_T_EE[12];
     initialPosition.y = msg->O_T_EE[13];
     initialPosition.z = msg->O_T_EE[14];
@@ -42,7 +50,9 @@ std::shared_ptr<trajectory_generator::LinearTrajectory> createLinearTrajectoryDo
         msg.pose.position.z
     );
 
-    
+    trajectory_generator::print_triple(c, "C is");
+    trajectory_generator::print_triple(start, "Start is");
+    trajectory_generator::print_triple(end, "End is");
     trajectory_generator::LinearTrajectory linearTrajectory (c, NORM, start, end, 2, 20);
     linearTrajectory.setForceThreshold(2);
     return std::make_shared<trajectory_generator::LinearTrajectory>(linearTrajectory);
@@ -118,6 +128,7 @@ int main(int argc, char **argv)
      * buffer up before throwing some away.
      */
     ros::Publisher trajectory_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian_impedance_example_controller/equilibrium_pose", 1000);
+
     double rate = 1000;
     ros::Rate loop_rate(rate);
     /**
@@ -136,6 +147,33 @@ int main(int argc, char **argv)
         ros::spinOnce();
     }
     sub.shutdown();
+    // ros::Duration(0.5).sleep();
+
+    // //*** START close gripper section
+    // actionlib::SimpleActionClient<franka_gripper::GraspAction> ac("franka_gripper/grasp", true); //to close the gripper (only necessary on the real robot)
+    // ROS_INFO("Waiting for action server to start.");
+    // // wait for the action server to start
+    // ac.waitForServer(); //will wait for infinite time
+    // ROS_INFO("Action server started, sending goal.");
+    // // send a goal to the action
+    // franka_gripper::GraspGoal goal;
+    // goal.width = 0.0;
+    // goal.speed = 0.02;
+    // ac.sendGoal(goal);
+    // //wait for the action to return
+    // bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
+    // if (finished_before_timeout)
+    // {
+    //     actionlib::SimpleClientGoalState state = ac.getState();
+    //     ROS_INFO("Action finished: %s",state.toString().c_str());
+    // }
+    // else
+    // {
+    //     ROS_INFO("Action did not finish before the time out.");
+    //     ac.cancelGoal();
+    //     throw std::runtime_error("Gripper action service not available");
+    // }
+    // //*** END close gripper section
 
     msg.pose.position.x = initialPosition.x;
     msg.pose.position.y = initialPosition.y;

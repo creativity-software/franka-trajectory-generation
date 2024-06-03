@@ -36,6 +36,7 @@ namespace velocity_profile
         q_double_dot(q_double_dot), q_dot_max(q_dot_max), p_start(p_start), p_end(p_end) {
             double d1 = 0.5 * q_double_dot * tc() * tc();
             double d2 = p_end - p_start - 2 * d1;
+            std::cout << "Difference is d1 " << d1 << ", d2" << d2 << "\n";
             if (d2 <= 0) {
                 throw std::invalid_argument("Input for the acceleration and speed give non-trapezoidal speed");
             }
@@ -66,6 +67,7 @@ namespace velocity_profile
         void updatePosition() {
             if (time >= 0 && time <= tc()) {
                 q = p_start + 0.5 * q_double_dot * std::pow(time, 2);
+                // std::cout << "Q is start " << q << "\n";
             } else if (time > tc() && time <= tf - tc()) {
                 q = p_start + q_double_dot * tc() * (time - (tc() * 0.5));
             } else if(tf - tc() < time && time <= tf) {
