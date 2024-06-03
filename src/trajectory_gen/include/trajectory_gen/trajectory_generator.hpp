@@ -14,7 +14,7 @@ namespace trajectory_generator
     using triple = std::tuple<double, double, double>;
     using triple_matrix = std::tuple<triple,triple,triple>;
 
-    triple triple_minus(triple p_end, triple p_start) {
+    triple operator-(const triple& p_end, const triple& p_start) {
         return std::make_tuple(
            std::get<0>(p_end) - std::get<0>(p_start),
            std::get<1>(p_end) - std::get<1>(p_start),
@@ -22,7 +22,7 @@ namespace trajectory_generator
         );
     };
 
-    triple triple_plus(triple p_end, triple p_start) {
+    triple operator+(const triple& p_end, const triple& p_start) {
         return std::make_tuple(
            std::get<0>(p_end) + std::get<0>(p_start),
            std::get<1>(p_end) + std::get<1>(p_start),
@@ -50,7 +50,7 @@ namespace trajectory_generator
             
     }
 
-    triple triple_divide(triple tr, double num) {
+    triple operator/(const triple& tr, const double num) {
         return std::make_tuple(
            std::get<0>(tr) / num,
            std::get<1>(tr) / num,
@@ -58,7 +58,7 @@ namespace trajectory_generator
         );
     }
 
-    triple triple_mul(triple tr, double num) {
+    triple operator*(const triple& tr, const double num) {
         return std::make_tuple(
            std::get<0>(tr) * num,
            std::get<1>(tr) * num,
@@ -67,10 +67,17 @@ namespace trajectory_generator
     }
     
 
-    bool is_bigger(triple p_start, triple p_end) {
+    bool operator>(const triple& p_start, const triple& p_end) {
         return std::get<0>(p_end) <= std::get<0>(p_start) &&
         std::get<1>(p_end) <= std::get<1>(p_start) &&
         std::get<2>(p_end) <= std::get<2>(p_start);
+    }
+    
+    triple operator*(const triple_matrix& rotational_matrix, const triple& p_start){
+        return
+        (std::get<0>(rotational_matrix) * std::get<0>(p_start)) +
+        (std::get<1>(rotational_matrix) * std::get<1>(p_start)) +
+        (std::get<2>(rotational_matrix) * std::get<2>(p_start));
     }
 
     void print_triple(triple tr, std::string str = "") {
@@ -78,19 +85,13 @@ namespace trajectory_generator
          << ", y = " << std::get<1>(tr) 
          << ", normal_vector_hat = " << std::get<2>(tr) << "\n";
     }
-       triple dot_product(triple_matrix rotational_matrix , triple p_start){
-        return triple_plus(
-            triple_mul(std::get<0>(rotational_matrix),std::get<0>(p_start)),
-            triple_plus(triple_mul(std::get<1>(rotational_matrix),std::get<1>(p_start)),
-            triple_mul(std::get<2>(rotational_matrix),std::get<2>(p_start)) )
-            );
-       }
     
-    double precision( double f, int places )
+    double precision( double f, int places)
     {
         double n = std::pow(10.0d, places ) ;
         return std::round(f * n) / n ;
     }
+
     class Trajectory {
     public:
         virtual ~Trajectory() {}
@@ -137,14 +138,14 @@ namespace trajectory_generator
     public:
         LinearTrajectory(triple c, triple normal_vector_hat , triple p_start, triple p_end, double q_dot_max, double q_double_dot, double q_dot = 0, double force_threshold = 0.0d): 
             c(c), normal_vector_hat(normal_vector_hat) , q_dot(q_dot), current_position(p_start), force_threshold(force_threshold) {
-            y_hat = triple_divide(triple_cross_product(normal_vector_hat , c) , triple_norm(triple_cross_product(normal_vector_hat, c)) );
+            y_hat = triple_cross_product(normal_vector_hat , c) / triple_norm(triple_cross_product(normal_vector_hat, c));
             x_hat = triple_cross_product(y_hat, normal_vector_hat);
             rotational_matrix = std::make_tuple(x_hat,y_hat,normal_vector_hat);
-            this->p_start =  triple_plus(dot_product(rotational_matrix,p_start),c);
-            this->p_end = triple_plus(dot_product(rotational_matrix,p_end),c);
-            triple diff = triple_minus(this->p_end, this->p_start);
+            this->p_start = rotational_matrix * p_start + c;
+            this->p_end = rotational_matrix * p_end + c;
+            triple diff = this->p_end - this->p_start;
             initial_diff = triple_norm(diff);
-            unit_vector = triple_divide(diff, initial_diff);
+            unit_vector = diff / initial_diff;
 
             // double p_start, double p_end, double q_dot_max, double q_double_dot
             profile = new velocity_profile::Profile(0, initial_diff, q_dot_max , q_double_dot);
@@ -152,17 +153,16 @@ namespace trajectory_generator
 
         void updatePosition() {
             // current position calculation
-            current_position = triple_plus(p_start, triple_mul(unit_vector, profile->getQ()));
+            current_position = p_start + unit_vector * profile->getQ();
             // print_triple(current_position, "Update [position]::");
         }
 
         double current_diff() {
-            triple diff = triple_minus(p_start, current_position);
+            triple diff = p_start - current_position;
             return triple_norm(diff);
         }
 
         void update(double dt, double force = 0) override {
-
             std::cout << "Force "  << force << ", f_th" << force_threshold << "\n";
             if (force_threshold > 0 && force > force_threshold) {
                 has_ended = true;
@@ -237,7 +237,7 @@ namespace trajectory_generator
     public: 
         CircleTrajectory2d(triple c, triple normal_vector_hat, double radius, double q_dot_max, double q_double_dot): 
         c(c), radius(radius), w(w), normal_vector_hat(normal_vector_hat) {
-            triple y_hat = triple_divide(triple_cross_product(normal_vector_hat , c) , triple_norm(triple_cross_product(normal_vector_hat, c)) );
+            triple y_hat = triple_cross_product(normal_vector_hat , c)  / triple_norm(triple_cross_product(normal_vector_hat, c));
             triple x_hat = triple_cross_product(y_hat, normal_vector_hat);
 
             // create start point relative to the center
@@ -245,7 +245,7 @@ namespace trajectory_generator
             // transform stat point back to the origin 
             rotational_matrix = std::make_tuple(x_hat,y_hat,normal_vector_hat);
 
-            p_start = triple_plus(dot_product(rotational_matrix, start_hat), c); 
+            p_start = rotational_matrix * start_hat + c; 
 
             this->profile = new velocity_profile::Profile(0, 2 * PI * radius, q_dot_max , q_double_dot);
             end_time = 2 * PI / w;
@@ -260,8 +260,7 @@ namespace trajectory_generator
                  radius * std::sin(portion),
                  0
             );
-
-            current_position = triple_plus(dot_product(rotational_matrix, current_position_path), c); 
+            current_position =  rotational_matrix * current_position_path + c; 
         }
 
 
