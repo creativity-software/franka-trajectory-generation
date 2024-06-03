@@ -147,32 +147,32 @@ int main(int argc, char **argv)
         ros::spinOnce();
     }
     sub.shutdown();
-    // ros::Duration(0.5).sleep();
+    ros::Duration(0.5).sleep();
 
     // //*** START close gripper section
-    // actionlib::SimpleActionClient<franka_gripper::GraspAction> ac("franka_gripper/grasp", true); //to close the gripper (only necessary on the real robot)
-    // ROS_INFO("Waiting for action server to start.");
-    // // wait for the action server to start
-    // ac.waitForServer(); //will wait for infinite time
-    // ROS_INFO("Action server started, sending goal.");
-    // // send a goal to the action
-    // franka_gripper::GraspGoal goal;
-    // goal.width = 0.0;
-    // goal.speed = 0.02;
-    // ac.sendGoal(goal);
-    // //wait for the action to return
-    // bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
-    // if (finished_before_timeout)
-    // {
-    //     actionlib::SimpleClientGoalState state = ac.getState();
-    //     ROS_INFO("Action finished: %s",state.toString().c_str());
-    // }
-    // else
-    // {
-    //     ROS_INFO("Action did not finish before the time out.");
-    //     ac.cancelGoal();
-    //     throw std::runtime_error("Gripper action service not available");
-    // }
+    actionlib::SimpleActionClient<franka_gripper::GraspAction> ac("franka_gripper/grasp", true); //to close the gripper (only necessary on the real robot)
+    ROS_INFO("Waiting for action server to start.");
+    // wait for the action server to start
+    ac.waitForServer(); //will wait for infinite time
+    ROS_INFO("Action server started, sending goal.");
+    // send a goal to the action
+    franka_gripper::GraspGoal goal;
+    goal.width = 0.0;
+    goal.speed = 0.02;
+    ac.sendGoal(goal);
+    //wait for the action to return
+    bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
+    if (finished_before_timeout)
+    {
+        actionlib::SimpleClientGoalState state = ac.getState();
+        ROS_INFO("Action finished: %s",state.toString().c_str());
+    }
+    else
+    {
+        ROS_INFO("Action did not finish before the time out.");
+        ac.cancelGoal();
+        throw std::runtime_error("Gripper action service not available");
+    }
     // //*** END close gripper section
 
     msg.pose.position.x = initialPosition.x;
