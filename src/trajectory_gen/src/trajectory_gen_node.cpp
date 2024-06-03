@@ -6,6 +6,7 @@
 #include <geometry_msgs/Point.h>
 #include <franka_msgs/FrankaState.h>
 #include <memory>
+#include <stack>
 
 
 bool initialised = false;
@@ -26,9 +27,9 @@ void getInitialPositionCallback(const franka_msgs::FrankaState::ConstPtr& msg)
     // std::cout << "In state callback , z is: " << msg->O_T_EE[14]  << std::endl;
     initialPosition.x = msg->O_T_EE[12];
     initialPosition.y = msg->O_T_EE[13];
-    // initialPosition.z = msg->O_T_EE[14];
+    initialPosition.z = msg->O_T_EE[14];
     // TODO: remove once the whole loop is done
-    initialPosition.z = 0.5;
+    // initialPosition.z = 0.5;
     initialised = true;
 //   ROS_INFO("I heard",
 // //    msg->c_str()
@@ -65,6 +66,56 @@ void getForceCallback(const franka_msgs::FrankaState::ConstPtr& msg)
 //   );
 
 }
+
+const trajectory_generator::triple NORM(0 , 0, 1);
+const double RADIUS = 0.1d;  
+
+
+std::shared_ptr<trajectory_generator::LinearTrajectory> createLinearTrajectoryDown(geometry_msgs::PoseStamped &msg) {
+    trajectory_generator::triple start(0, 0, 0);
+    trajectory_generator::triple end(0, 0, -msg.pose.position.z);
+    trajectory_generator::triple c(
+        msg.pose.position.x,
+        msg.pose.position.y,
+        msg.pose.position.z
+    );
+
+    
+    trajectory_generator::LinearTrajectory linearTrajectory (c, NORM, start, end, 2, 20);
+    linearTrajectory.setForceThreshold(2);
+    return std::make_shared<trajectory_generator::LinearTrajectory>(linearTrajectory);
+}
+
+std::shared_ptr<trajectory_generator::CircleTrajectory2d> createCirclularTrajectory(geometry_msgs::PoseStamped &msg) {
+    trajectory_generator::triple c(
+        msg.pose.position.x,
+        msg.pose.position.y,
+        msg.pose.position.z
+    );
+    trajectory_generator::CircleTrajectory2d circularTrajectory(c, NORM, RADIUS, 2, 10);
+    return std::make_shared<trajectory_generator::CircleTrajectory2d>(circularTrajectory);
+}
+
+std::shared_ptr<trajectory_generator::LinearTrajectory> createLinearTrajectory(geometry_msgs::PoseStamped &msg, double z) {
+    trajectory_generator::triple start(0, 0, 0);
+    trajectory_generator::triple end(-RADIUS, 0, z - msg.pose.position.z);
+    trajectory_generator::triple c(
+        msg.pose.position.x,
+        msg.pose.position.y,
+        msg.pose.position.z
+    );
+
+    
+    trajectory_generator::LinearTrajectory linearTrajectory (c, NORM, start, end, 2, 20);
+    return std::make_shared<trajectory_generator::LinearTrajectory>(linearTrajectory);
+}
+
+
+enum RobotState {
+    DOWN_LINEAR,
+    CIRCULAR,
+    UP_LINEAR
+};
 
 
 int main(int argc, char **argv)
@@ -115,7 +166,6 @@ int main(int argc, char **argv)
 
     ROS_INFO("Starting trajectory generation");
     double time = 0.0;
-    // bool hitsGround = msg.pose.position.z == 0;
 
     trajectory_pub.publish(msg);
 
@@ -129,42 +179,21 @@ int main(int argc, char **argv)
     msg.pose.position.y = initialPosition.y;
     msg.pose.position.z = initialPosition.z;
     msg.header.frame_id = "panda_link6";
-    // ros::spin();
 
     trajectory_pub.publish(msg);
 
-    std::cout << "Initial position z " << msg.pose.position.z << std::endl;
-    // double p_start, double p_end, double q_dot_max, double q_double_dot
-    // velocity_profile::Profile profile(0, 10, 4, 10);
-    trajectory_generator::triple start(0, 0, 0);
-    trajectory_generator::triple end(0, 0, -msg.pose.position.z);
-    // LT(go_down) -> LT(go_to_start) -> CT(rotate) -> LT(go_to_start_down) -> LT(go_up)
-    trajectory_generator::LinearTrajectory linearTrajectory (
-         std::make_tuple(
-         msg.pose.position.x,
-         msg.pose.position.y,
-         msg.pose.position.z), 
-         std::make_tuple(0 , 0,1) , start, end, 2, 20);
-    trajectory_generator::CircleTrajectory2d circularTrajectory(
-    std::make_tuple(
-    msg.pose.position.x,
-    msg.pose.position.y,
-    0)
-        , std::make_tuple(0 , 0,1), 0.1, 2, 10);
-    
+    std::shared_ptr<trajectory_generator::Trajectory> trajectory = createLinearTrajectoryDown(msg);
+    RobotState state = DOWN_LINEAR;
 
-    std::unique_ptr<trajectory_generator::Trajectory> trajectory = std::make_unique<trajectory_generator::LinearTrajectory>(linearTrajectory);
-    bool isFinalTrajectory = false;
-    // ros::Subscriber forceSub = n.subscribe("/franka_state_controller/franka_states", 1000, getForceCallback);
+    ros::Subscriber forceSub = n.subscribe("/franka_state_controller/franka_states", 1000, getForceCallback);
+
     while (ros::ok())
     {
+        // std::shared_ptr<trajectory_generator::Trajectory> trajectory = trajectories.top();
         double dt = 1.0d / rate;
-        trajectory->update(dt);
+        trajectory->update(dt, previousZForce);
         geometry_msgs::Point current_point = trajectory->getPoint();
-        // std::cout << "Update trajectory, " << (isFinalTrajectory ? "circular" : "linear")  << "- position x: " << current_point.x 
-        // << ", y: " << current_point.y << ", z: " << current_point.z << "\n"; 
-        // std::cout << "Update position velocity: " << profile.getQDot() << ", update time: " << profile.getTime()  << ", current position" << profile.getQ() << "\n"; 
-        
+
         msg.pose.position.y = current_point.y;
         msg.pose.position.x = current_point.x;
         msg.pose.position.z = current_point.z;
@@ -175,23 +204,24 @@ int main(int argc, char **argv)
 
         time = time + 1 / rate;
         seq += 1;
-        // msg.pose.position.x -= 0.1;
-        if (trajectory->isEnded() && !isFinalTrajectory) {
-            isFinalTrajectory = true;
-            trajectory =  std::make_unique<trajectory_generator::CircleTrajectory2d>(circularTrajectory);
-            std::cout << "Change to rotation" << std::endl;
+
+        if (trajectory->isEnded() && state == DOWN_LINEAR) {
+            std::cout << "Change to trajectory: " << trajectory->getName() << std::endl;
+            trajectory = createCirclularTrajectory(msg);
+            state = CIRCULAR;
             continue;
-        } else if (trajectory->isEnded() && isFinalTrajectory) {
-            std::cout << "Change to end" << std::endl;
+        } else if (trajectory->isEnded() && state == CIRCULAR) {
+            std::cout << "Change to trajectory: " << trajectory->getName() << std::endl;
+            trajectory = createLinearTrajectory(msg, initialPosition.z);
+            state = UP_LINEAR;
+            continue;
+        } else if (trajectory->isEnded() && state == UP_LINEAR) {
             break;
-        }
-    
-        // ROS_INFO("Starting trajectory generation" + seq);
-        // std::cout << "Hello b. " <<  msg.pose.position.x << "\n";
+        } 
+        
         msg.header.seq = seq;
         msg.header.frame_id = "panda_link6";
 
-        // std::cout << msg.pose.position.x << std::endl;
 
         /**
          * The publish() function is how you send messages. The parameter

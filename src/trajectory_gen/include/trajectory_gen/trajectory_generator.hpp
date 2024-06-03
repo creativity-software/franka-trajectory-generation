@@ -7,6 +7,8 @@
 #include <geometry_msgs/Point.h>
 #include <string>
 #include "velocity_profile.hpp"
+#include <string>
+
 namespace trajectory_generator
 {
     using triple = std::tuple<double, double, double>;
@@ -92,9 +94,10 @@ namespace trajectory_generator
     class Trajectory {
     public:
         virtual ~Trajectory() {}
-        virtual void update(double dt) = 0;
+        virtual void update(double dt, double force = 0) = 0;
         virtual bool isEnded() = 0;
         virtual geometry_msgs::Point getPoint() = 0;
+        virtual std::string getName() = 0;
     };
 
     class LinearTrajectory: public Trajectory {
@@ -128,11 +131,12 @@ namespace trajectory_generator
         // velocity profile
         velocity_profile::Profile *profile;
 
+        double force_threshold;
         
         bool has_ended = false;
     public:
-        LinearTrajectory(triple c, triple normal_vector_hat , triple p_start, triple p_end,double q_dot_max,double q_double_dot, double q_dot = 0): 
-            c(c), normal_vector_hat(normal_vector_hat) , q_dot(q_dot), current_position(p_start) {
+        LinearTrajectory(triple c, triple normal_vector_hat , triple p_start, triple p_end, double q_dot_max, double q_double_dot, double q_dot = 0, double force_threshold = 0.0d): 
+            c(c), normal_vector_hat(normal_vector_hat) , q_dot(q_dot), current_position(p_start), force_threshold(force_threshold) {
             y_hat = triple_divide(triple_cross_product(normal_vector_hat , c) , triple_norm(triple_cross_product(normal_vector_hat, c)) );
             x_hat = triple_cross_product(y_hat, normal_vector_hat);
             rotational_matrix = std::make_tuple(x_hat,y_hat,normal_vector_hat);
@@ -173,11 +177,18 @@ namespace trajectory_generator
             return triple_norm(diff);
         }
 
-        void update(double dt) override {
-            std::cout << "Current [diff]::" << profile->getQ() << "\n";
-            std::cout << "Current [init_diff]::" << initial_diff << "\n";
+        void update(double dt, double force = 0) override {
+            // std::cout << "Current [diff]::" << profile->getQ() << "\n";
+            // std::cout << "Current [init_diff]::" << initial_diff << "\n";
+
+            std::cout << "Force "  << force << ", f_th" << force_threshold << "\n";
+            if (force_threshold > 0 && force > force_threshold) {
+                has_ended = true;
+                return;
+            }
+
             if (precision(profile->getQ(), 3) >= precision(initial_diff, 3)) {
-                std::cout << "Diff reset" << std::endl;
+                // std::cout << "Diff reset" << std::endl;
                 has_ended = true;
                 return;
             }
@@ -190,12 +201,20 @@ namespace trajectory_generator
             return has_ended;
         }
 
+        void setForceThreshold(double th) {
+            force_threshold = th;
+        }
+
         geometry_msgs::Point getPoint() override {
             geometry_msgs::Point point;
             point.x = std::get<0>(current_position);
             point.y = std::get<1>(current_position);
             point.z = std::get<2>(current_position);
             return point;
+        }
+
+        std::string getName() override {
+            return "Trajectory::LinearTrajectory";
         }
     };
 
@@ -245,11 +264,6 @@ namespace trajectory_generator
             rotational_matrix = std::make_tuple(x_hat,y_hat,normal_vector_hat);
 
             p_start = triple_plus(dot_product(rotational_matrix, start_hat), c); 
-            // current_position = std::make_tuple(
-            //     std::get<0>(p_start),
-            //     std::get<1>(p_start),
-            //     std::get<2>(p_start)
-            // );
 
             this->profile = new velocity_profile::Profile(0, 2 * PI * radius, q_dot_max , q_double_dot);
             end_time = 2 * PI / w;
@@ -269,8 +283,9 @@ namespace trajectory_generator
         }
 
 
-        void update(double dt) override {
-            std::cout << "Profile,  path: " << profile->getQ() << "radius: "<< 2 * PI * radius << "\n";
+        void update(double dt, double force = 0) override {
+            // std::cout << "Profile,  path: " << profile->getQ() << "radius: "<< 2 * PI * radius << "\n";
+            std::cout << "Circular z" << std::get<2>(current_position) << "\n";
             if (precision(profile->getQ(), 3) >= precision(2 * PI * radius, 3)) {
                 has_ended = true;
                 return;
@@ -291,6 +306,10 @@ namespace trajectory_generator
             point.y = std::get<1>(current_position);
             point.z = std::get<2>(current_position);
             return point;
+        }
+
+        std::string getName() override {
+            return "Trajectory::CircleTrajectory2d";
         }
 
     };
