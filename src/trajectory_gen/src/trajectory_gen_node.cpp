@@ -17,54 +17,16 @@ double previousZForce = 0.0d;
 
 void getInitialPositionCallback(const franka_msgs::FrankaState::ConstPtr& msg)
 {
-    // [0.7065002343568823, -0.7077127227431425, 0.00034773719708732474, 0.0, -0.7077127999605454, -0.7065000660134543, 0.0004994947345348464, 0.0, -0.00010782242587599956, -0.0005989912124100002, -0.9999998147919088, 0.0, 0.30691149243109883, -9.525381826038915e-05, 0.5902920594835598, 1.0]
-    // x = 0.30691149243109883,  y= -9.525381826038915e-05, z = 0.5902920594835598
-    // msg->O_F_ext_hat_K;//force at the e.e. take the first three components and do euclidean norm 
-    // msg->O_T_EE; //transformation matrix from base to end effector. take position matrix
-
-    //position end effector. for initialization
-    //external force on the end effector. use to check when in contact with table
-    // std::cout << "In state callback , z is: " << msg->O_T_EE[14]  << std::endl;
     initialPosition.x = msg->O_T_EE[12];
     initialPosition.y = msg->O_T_EE[13];
     initialPosition.z = msg->O_T_EE[14];
-    // TODO: remove once the whole loop is done
-    // initialPosition.z = 0.5;
     initialised = true;
-//   ROS_INFO("I heard",
-// //    msg->c_str()
-//   );
-
 }
 
 
 void getForceCallback(const franka_msgs::FrankaState::ConstPtr& msg)
 {
-    // [0.7065002343568823, -0.7077127227431425, 0.00034773719708732474, 0.0, -0.7077127999605454, -0.7065000660134543, 0.0004994947345348464, 0.0, -0.00010782242587599956, -0.0005989912124100002, -0.9999998147919088, 0.0, 0.30691149243109883, -9.525381826038915e-05, 0.5902920594835598, 1.0]
-    // x = 0.30691149243109883,  y= -9.525381826038915e-05, z = 0.5902920594835598
-    // msg->O_F_ext_hat_K;//force at the e.e. take the first three components and do euclidean norm 
-    // msg->O_T_EE; //transformation matrix from base to end effector. take position matrix
-    
-    // curr = 9.5, prev = 0
-    // curr = 9.2 -  8.2 = 9.5 > threshold
-    // if (msg->O_F_ext_hat_K[2] > 1.0d) {
-    //     changeToCircular = true;
-    //     std::cout << "In state callback , z force is: " << msg->O_F_ext_hat_K[2]  << std::endl;
-    // }
-
     previousZForce = msg->O_F_ext_hat_K[2];
-    //position end effector. for initialization
-    //external force on the end effector. use to check when in contact with table
-    // initialPosition.x = msg->O_T_EE[12];
-    // initialPosition.y = msg->O_T_EE[13];
-    // initialPosition.z = msg->O_T_EE[14];
-    // TODO: remove once the whole loop is done
-    // initialPosition.z = 0.5;
-    // initialised = true;
-//   ROS_INFO("I heard",
-// //    msg->c_str()
-//   );
-
 }
 
 const trajectory_generator::triple NORM(0 , 0, 1);
