@@ -148,22 +148,6 @@ namespace trajectory_generator
 
             // double p_start, double p_end, double q_dot_max, double q_double_dot
             profile = new velocity_profile::Profile(0, initial_diff, q_dot_max , q_double_dot);
-
-            
-            // std::cout << "diff: " << initial_diff << " " << std::endl;
-            // print_triple(unit_vector , "Unit Vector: ");
-            // print_triple(this->p_start , " p_start:");
-            // print_triple(this->p_end , " p_end:");
-
-
-            // print_triple(y_hat , " y_hat:::" );
-            // print_triple(x_hat , " x_hat:::" );
-            // print_triple(std::get<0>(rotational_matrix), "rotational_matrix_x");
-            // print_triple(std::get<1>(rotational_matrix), "rotational_matrix_y");
-            // print_triple(std::get<2>(rotational_matrix), "rotational_matrix_normal_vector_hat");
-            // print_triple(unit_vector, "Unit vector:::");
-            // print_triple(p_start, "P_start vector:::");
-            // print_triple(p_end, "P_end vector:::");
          };
 
         void updatePosition() {
@@ -178,8 +162,6 @@ namespace trajectory_generator
         }
 
         void update(double dt, double force = 0) override {
-            // std::cout << "Current [diff]::" << profile->getQ() << "\n";
-            // std::cout << "Current [init_diff]::" << initial_diff << "\n";
 
             std::cout << "Force "  << force << ", f_th" << force_threshold << "\n";
             if (force_threshold > 0 && force > force_threshold) {
@@ -284,7 +266,6 @@ namespace trajectory_generator
 
 
         void update(double dt, double force = 0) override {
-            // std::cout << "Profile,  path: " << profile->getQ() << "radius: "<< 2 * PI * radius << "\n";
             std::cout << "Circular z" << std::get<2>(current_position) << "\n";
             if (precision(profile->getQ(), 3) >= precision(2 * PI * radius, 3)) {
                 has_ended = true;
