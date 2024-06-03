@@ -164,7 +164,10 @@ namespace trajectory_generator
 
         void update(double dt, double force = 0) override {
             std::cout << "Force "  << force << ", f_th" << force_threshold << "\n";
-            if (force_threshold > 0 && force > force_threshold) {
+            time += dt;
+            profile->update(dt);
+            updatePosition();
+            if (force_threshold && force > force_threshold) {
                 has_ended = true;
                 return;
             }
@@ -174,9 +177,6 @@ namespace trajectory_generator
                 has_ended = true;
                 return;
             }
-            time += dt;
-            profile->update(dt);
-            updatePosition();
         }
 
         bool isEnded() override {
