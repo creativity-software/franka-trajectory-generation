@@ -11,9 +11,11 @@
 
 namespace trajectory_generator
 {
+    // To define the 3x1 vector and the 3x3 matrix in our code first
     using triple = std::tuple<double, double, double>;
     using triple_matrix = std::tuple<triple,triple,triple>;
 
+    // For the subtraction of vectors
     triple triple_minus(triple p_end, triple p_start) {
         return std::make_tuple(
            std::get<0>(p_end) - std::get<0>(p_start),
@@ -22,6 +24,7 @@ namespace trajectory_generator
         );
     };
 
+    // For the addition of vectors
     triple triple_plus(triple p_end, triple p_start) {
         return std::make_tuple(
            std::get<0>(p_end) + std::get<0>(p_start),
@@ -30,7 +33,8 @@ namespace trajectory_generator
         );
     };
 
-    // |V| = sqrt(x*x + y*y + normal_vector_hat*normal_vector_hat) 
+    // |V| = sqrt(x*x + y*y + normal_vector_hat*normal_vector_hat)
+    // To calculate the magnitude of a vector 
     double triple_norm(triple p) {
         return std::sqrt(
            std::get<0>(p) * std::get<0>(p) + 
@@ -40,6 +44,7 @@ namespace trajectory_generator
     }
     
 
+    // To calculate the cross product of 2 vectors
     triple triple_cross_product(triple vector_one, triple vector_two){
 
          return std::make_tuple(
@@ -50,6 +55,7 @@ namespace trajectory_generator
             
     }
 
+    // For the division of a vector by a number
     triple triple_divide(triple tr, double num) {
         return std::make_tuple(
            std::get<0>(tr) / num,
@@ -58,6 +64,7 @@ namespace trajectory_generator
         );
     }
 
+    // For the multiplication of a vector by a number
     triple triple_mul(triple tr, double num) {
         return std::make_tuple(
            std::get<0>(tr) * num,
@@ -67,6 +74,7 @@ namespace trajectory_generator
     }
     
 
+    // To decide if the numbers of one vector are all bigger than the corresponding numbers of another vector 
     bool is_bigger(triple p_start, triple p_end) {
         return std::get<0>(p_end) <= std::get<0>(p_start) &&
         std::get<1>(p_end) <= std::get<1>(p_start) &&
@@ -78,6 +86,7 @@ namespace trajectory_generator
          << ", y = " << std::get<1>(tr) 
          << ", normal_vector_hat = " << std::get<2>(tr) << "\n";
     }
+       // For the multiplication of a 3x3 matrix and a 3x1 vector
        triple dot_product(triple_matrix rotational_matrix , triple p_start){
         return triple_plus(
             triple_mul(std::get<0>(rotational_matrix),std::get<0>(p_start)),
@@ -86,6 +95,7 @@ namespace trajectory_generator
             );
        }
     
+    // To create better precision for critical value region such as near 0
     double precision( double f, int places )
     {
         double n = std::pow(10.0d, places ) ;
@@ -156,6 +166,7 @@ namespace trajectory_generator
             // print_triple(current_position, "Update [position]::");
         }
 
+        // To get the distance between the start point and the end point
         double current_diff() {
             triple diff = triple_minus(p_start, current_position);
             return triple_norm(diff);
@@ -163,6 +174,7 @@ namespace trajectory_generator
 
         void update(double dt, double force = 0) override {
 
+            // To stop linear movement once the force is beyond the threshold
             std::cout << "Force "  << force << ", f_th" << force_threshold << "\n";
             if (force_threshold > 0 && force > force_threshold) {
                 has_ended = true;
@@ -240,21 +252,27 @@ namespace trajectory_generator
             triple y_hat = triple_divide(triple_cross_product(normal_vector_hat , c) , triple_norm(triple_cross_product(normal_vector_hat, c)) );
             triple x_hat = triple_cross_product(y_hat, normal_vector_hat);
 
-            // create start point relative to the center
+            // create start point relative to the center to draw a circle
             triple start_hat = std::make_tuple(radius, 0, 0);
-            // transform stat point back to the origin 
+
+            // The rotational matrix serves for transforming the position in the end effector coordination system back to the base coordination system
             rotational_matrix = std::make_tuple(x_hat,y_hat,normal_vector_hat);
 
+            //Now position in the base coordination system has been obtained; c refers to the vector from origin of the base to the origin of the end effector
             p_start = triple_plus(dot_product(rotational_matrix, start_hat), c); 
 
+            // In order to use the previously defined trapezoidal velocity
             this->profile = new velocity_profile::Profile(0, 2 * PI * radius, q_dot_max , q_double_dot);
             end_time = 2 * PI / w;
         }   
 
         void updatePosition() {
             double q = profile->getQ();
+            
+            // This variable refers to the ratio of the travelled path to the radius 
             double portion = q / radius;
 
+            // In this way we can get the exact position of the end effector while drawing a circle
             triple current_position_path = std::make_tuple(
                  std::cos(portion) * radius ,
                  radius * std::sin(portion),
