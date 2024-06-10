@@ -34,6 +34,10 @@ namespace velocity_profile
     public:
         Profile(double p_start, double p_end, double q_dot_max, double q_double_dot):
         q_double_dot(q_double_dot), q_dot_max(q_dot_max), p_start(p_start), p_end(p_end) {
+            
+            // d1 refers to the path of acceleration, and d2 the path of constant velocity period. Only when both of
+            // them are positive is the velocity profile trapezoidal
+
             double d1 = 0.5 * q_double_dot * tc() * tc();
             double d2 = p_end - p_start - 2 * d1;
             std::cout << "Difference is d1 " << d1 << ", d2" << d2 << "\n";
@@ -100,6 +104,7 @@ namespace velocity_profile
             updateVelocity();      
         }
 
+        // To get the current velocity
         double getQDot() {
             return q_dot;
         }
@@ -108,6 +113,7 @@ namespace velocity_profile
             return time;
         }
 
+        // To get the current position
         double getQ() {
             return q;
         }
