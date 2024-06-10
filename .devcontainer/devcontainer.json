@@ -1,0 +1,21 @@
+{
+    // "name": "[Optional] Your project name here",
+    "privileged": true,
+    "remoteUser": "tueirsi-mia-n42",
+    "dockerComposeFile": "../docker-compose.yml",
+    "service": "sm_node",
+    "workspaceFolder": "/home/tueirsi-mia-n42/ros_ws",
+    "shutdownAction": "stopCompose",
+    "customizations": {
+      "vscode": {
+          "extensions":[
+              "ms-vscode.cpptools",
+              "ms-vscode.cpptools-themes",
+              "twxs.cmake",
+              "donjayamanne.python-extension-pack",
+              "eamodio.gitlens",
+              "ms-iot.vscode-ros"
+          ]
+      }
+    }
+  }

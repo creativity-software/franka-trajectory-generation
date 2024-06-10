@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+<launch>
+  <arg name="sim" default ="true" />
+  <arg name="arm_id" default="panda" />
+  <arg name="use_gripper" default="false" />
+  <arg name="world" default="$(find demo_pkg)/world/polish.sdf" doc="Filename to a SDF World for gazebo to use" />
+  <!-- <arg name="world" default="worlds/empty.world" doc="Filename to a SDF World for gazebo to use" /> -->
+
+  <!-- <group ns="$(arg arm_id)"> -->
+    <rosparam command="load" file="$(find franka_impl_controllers)/config/franka_impl_controllers.yaml" subst_value="true"/>
+    <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="'unified_impl_controller'" />
+  <!-- </group> -->
+  <include file="$(find franka_gazebo)/launch/panda.launch" if="$(arg sim)">
+    <arg name="arm_id" value="$(arg arm_id)"/>
+    <arg name="use_gripper" value="$(arg use_gripper)"/>
+    <arg name="world" default="$(arg world)"/>
+  </include>
+</launch>
+
+
+
