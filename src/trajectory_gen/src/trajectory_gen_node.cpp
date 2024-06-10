@@ -1,15 +1,18 @@
 #include "ros/ros.h"
 #include "geometry_msgs/PoseStamped.h"
 #include <geometry_msgs/Point.h>
-#include "trajectory_gen/trajectory_generator.hpp"
-#include "trajectory_gen/velocity_profile.hpp"
-#include "franka_msgs/FrankaState.h"
 
+#include "trajectory_gen/trajectory_generator.hpp"
+#include "trajectory_gen/trajectory.hpp"
+#include "trajectory_gen/velocity_profile.hpp"
+
+#include "franka_msgs/FrankaState.h"
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
 
 #include "franka_gripper/GraspAction.h"
 #include "franka_msgs/SetLoad.h"
+#include "helpers/triple.hpp"
 
 #include <iostream>
 #include <memory>
@@ -37,29 +40,29 @@ void getForceCallback(const franka_msgs::FrankaState::ConstPtr& msg)
     previousZForce = msg->O_F_ext_hat_K[2];
 }
 
-const trajectory_generator::triple NORM(0 , 0, 1);
+const triple NORM(0 , 0, 1);
 const double RADIUS = 0.1d;  
 
 
 std::shared_ptr<trajectory_generator::LinearTrajectory> createLinearTrajectoryDown(geometry_msgs::PoseStamped &msg) {
-    trajectory_generator::triple start(0, 0, 0);
-    trajectory_generator::triple end(0, 0, -msg.pose.position.z);
-    trajectory_generator::triple c(
+    triple start(0, 0, 0);
+    triple end(0, 0, -msg.pose.position.z);
+    triple c(
         msg.pose.position.x,
         msg.pose.position.y,
         msg.pose.position.z
     );
 
-    trajectory_generator::print_triple(c, "C is");
-    trajectory_generator::print_triple(start, "Start is");
-    trajectory_generator::print_triple(end, "End is");
+    print_triple(c, "C is");
+    print_triple(start, "Start is");
+    print_triple(end, "End is");
     trajectory_generator::LinearTrajectory linearTrajectory (c, NORM, start, end, 2, 20);
     linearTrajectory.setForceThreshold(2);
     return std::make_shared<trajectory_generator::LinearTrajectory>(linearTrajectory);
 }
 
 std::shared_ptr<trajectory_generator::CircleTrajectory2d> createCirclularTrajectory(geometry_msgs::PoseStamped &msg) {
-    trajectory_generator::triple c(
+    triple c(
         msg.pose.position.x,
         msg.pose.position.y,
         msg.pose.position.z
@@ -69,9 +72,9 @@ std::shared_ptr<trajectory_generator::CircleTrajectory2d> createCirclularTraject
 }
 
 std::shared_ptr<trajectory_generator::LinearTrajectory> createLinearTrajectory(geometry_msgs::PoseStamped &msg, double z) {
-    trajectory_generator::triple start(0, 0, 0);
-    trajectory_generator::triple end(-RADIUS, 0, z - msg.pose.position.z);
-    trajectory_generator::triple c(
+    triple start(0, 0, 0);
+    triple end(-RADIUS, 0, z - msg.pose.position.z);
+    triple c(
         msg.pose.position.x,
         msg.pose.position.y,
         msg.pose.position.z
