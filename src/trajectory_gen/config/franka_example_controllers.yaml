@@ -1,0 +1,15 @@
+cartesian_impedance_example_controller:
+    type: franka_example_controllers/CartesianImpedanceExampleController
+    arm_id: $(arg arm_id)
+    joint_names:
+        - $(arg arm_id)_joint1
+        - $(arg arm_id)_joint2
+        - $(arg arm_id)_joint3
+        - $(arg arm_id)_joint4
+        - $(arg arm_id)_joint5
+        - $(arg arm_id)_joint6
+        - $(arg arm_id)_joint7
+    lower_torque_thresholds_nominal: [100, 100, 100, 80, 80, 40, 40]
+    upper_torque_thresholds_nominal: [100, 100, 100, 80, 80, 40, 40]
+    lower_force_thresholds_nominal: [100, 100, 100, 30, 30, 30]
+    upper_force_thresholds_nominal: [100, 100, 100, 30, 30, 30]
