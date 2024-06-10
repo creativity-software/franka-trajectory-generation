@@ -2,7 +2,8 @@
 #include "geometry_msgs/PoseStamped.h"
 #include <geometry_msgs/Point.h>
 
-#include "trajectory_gen/trajectory_generator.hpp"
+#include "trajectory_gen/trajectory_generator_circular.hpp"
+#include "trajectory_gen/trajectory_generator_linear.hpp"
 #include "trajectory_gen/trajectory.hpp"
 #include "trajectory_gen/velocity_profile.hpp"
 

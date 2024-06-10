@@ -142,7 +142,7 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 #add_executable(${PROJECT_NAME}_node src/trajectory_gen_node.cpp src/velocity_profile.cpp src/trajectory_generator.cpp)
-add_executable(${PROJECT_NAME}_node src/helpers/triple.cpp src/trajectory_gen_node.cpp)
+add_executable(${PROJECT_NAME}_node src/helpers/triple.cpp src/velocity_profile.cpp src/trajectory_generator_linear.cpp src/trajector_generator_circular.cpp src/trajectory_gen_node.cpp)
 
 # add_executable(${PROJECT_NAME}_node src/point.cpp)
 
