@@ -20,10 +20,13 @@
 #include <stack>
 
 
-bool initialised = false;
 geometry_msgs::Point initialPosition;
+bool initialised = false;
 int changeToCircular = false;
 double previousZForce = 0.0d;
+
+constexpr triple NORM(0 , 0, 1);
+constexpr double RADIUS = 0.1d;  
 
 
 void getInitialPositionCallback(const franka_msgs::FrankaState::ConstPtr& msg)
@@ -40,9 +43,6 @@ void getForceCallback(const franka_msgs::FrankaState::ConstPtr& msg)
 {
     previousZForce = msg->O_F_ext_hat_K[2];
 }
-
-const triple NORM(0 , 0, 1);
-const double RADIUS = 0.1d;  
 
 
 std::shared_ptr<trajectory_generator::LinearTrajectory> createLinearTrajectoryDown(geometry_msgs::PoseStamped &msg) {
